@@ -1,0 +1,480 @@
+#include <mega16.h>
+#include <delay.h>
+#include <alcd.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+ 
+#define bit_set(r, b) r |= (1 << b)
+#define bit_clr(r, b) r &= ~(1 << b)
+ 
+char keypad();
+void ChangePasswordUser(unsigned int enteredID);
+void ChangePasswordAdmin();
+void EE_Write(unsigned int add, const unsigned char *data, int length);
+void EE_Read(unsigned int add, unsigned char *data, int length);
+ 
+ 
+unsigned int id;
+unsigned char password[4]; // Array to store the password
+unsigned char storedPassword[4];
+unsigned char OldPassword[4];
+unsigned char NewPassword[4];
+unsigned char ReenterNewPassword[4];
+unsigned char ChangeAdminPasswords[4];
+unsigned char ChangeAdminPasswordsForUsers[4];
+unsigned char Temp[]="203";
+ 
+unsigned int id1;
+unsigned int id2;
+unsigned int id3;
+unsigned int enteredID;
+unsigned int i = 0;
+unsigned int j = 0;
+unsigned int k = 0 ;
+ 
+void initializeEEPROM()
+{
+ 
+	// Initialize EEPROM with some default values
+	unsigned char defaultPassword1[] = "203";
+	unsigned char defaultPassword2[] = "129";
+	unsigned char defaultPassword3[] = "325";
+	unsigned char defaultPassword4[] = "426";
+	unsigned char defaultPassword5[] = "079";
+ 
+	EE_Write(111, defaultPassword1, sizeof(defaultPassword1) - 1);
+	EE_Write(126, defaultPassword2, sizeof(defaultPassword2) - 1);
+	EE_Write(130, defaultPassword3, sizeof(defaultPassword3) - 1);
+	EE_Write(134, defaultPassword4, sizeof(defaultPassword4) - 1);
+	EE_Write(138, defaultPassword5, sizeof(defaultPassword5) - 1);
+	// Add more passwords if needed
+}
+ 
+void main(void)
+{
+	DDRC = 0b00000111; // 1 pin unused, 4 rows (input), 3 columns (output)
+	PORTC = 0b11111000; // pull-up  resistance  to avoid floating  for keypad
+	DDRD.2 = 0; // INT0 Admin
+	PORTD.2 = 1;
+	DDRD.3 = 0;// INT1 Set PC for user
+	PORTD.3 = 1;
+	DDRD.1 = 1; //Motor
+	PORTD.1 = 0;
+	DDRD.5 = 1; // Alarm
+	PORTD.5 = 0;
+	// INT0
+	bit_set(MCUCR, 1);  //MCUCR |= (1<<1)
+	bit_clr(MCUCR, 0);  //MCUCR &= ~(1<<0)
+	// INT1
+	bit_set(MCUCR, 3);
+	bit_clr(MCUCR, 2);
+#asm("sei");      // Set Enable Interrupt
+	bit_set(GICR, 6);  // EXT0 specific enable
+	bit_set(GICR, 7);      // EXT1
+	lcd_init(16);      // Important to initialize the LCD, Give it the number of characters per line
+ 
+	initializeEEPROM(); // Initialize EEPROM with default values
+ 
+	while (1)
+		{
+		//Please write your application code here
+		lcd_clear();
+		lcd_printf("Press * to enter");
+		while (keypad() != 10);
+		lcd_clear();
+		lcd_printf("Entered ID:");
+		id1 = keypad();
+		id2 = keypad();
+		id3 = keypad();
+		enteredID = id3 + (id2 * 10) + (id1 * 100);
+		lcd_gotoxy(0, 1);
+		lcd_printf("%u", enteredID);
+		while (keypad() != 10);
+		//lcd_clear();
+ 
+		if (enteredID == 111 || enteredID == 126 || enteredID == 130 || enteredID == 134 || enteredID == 138 )    // enteredID == 111 || enteredID == 222 || enteredID == 333 || enteredID == 444 || enteredID == 555
+			{
+			lcd_clear();
+			lcd_printf("Enter Password:\n");
+			lcd_gotoxy(0, 1);
+			for (i = 0; i < sizeof(password) - 1; ++i)
+				{
+				password[i] = keypad() + '0';
+				// lcd_data('*');
+				}
+			password[sizeof(password) - 1] = '\0'; // Null-terminate the password
+ 
+			lcd_printf("%s", password);
+ 
+			storedPassword[sizeof(password)];
+			EE_Read(enteredID, storedPassword, sizeof(password) - 1);
+ 
+ 
+			while (keypad() != 10);
+			if (strcmp(password, storedPassword) == 0 && enteredID == 111)
+				{
+				lcd_clear();
+				lcd_gotoxy(5, 0);
+				lcd_printf("Welcome!");
+				lcd_gotoxy(7, 1);
+				lcd_printf("Prof");
+				delay_ms(1000);
+				lcd_clear();
+				lcd_printf("Door is opening");
+				lcd_gotoxy(0, 1);
+				lcd_printf("Press * to enter");
+				PORTD.1 = 1;
+				}
+ 
+			else if (strcmp(password, storedPassword) == 0 && enteredID == 126)
+				{
+				lcd_clear();
+				lcd_gotoxy(5, 0);
+				lcd_printf("Welcome!");
+				lcd_gotoxy(7, 1);
+				lcd_printf("Mina");
+				delay_ms(1000);
+				lcd_clear();
+				lcd_printf("Door is opening");
+				lcd_gotoxy(0, 1);
+				lcd_printf("Press * to enter");
+				PORTD.1 = 1;
+				}
+			else if (strcmp(password, storedPassword) == 0 && enteredID == 130)
+				{
+				lcd_clear();
+				lcd_gotoxy(5, 0);
+				lcd_printf("Welcome!");
+				lcd_gotoxy(7, 1);
+				lcd_printf("Abdo");
+				delay_ms(1000);
+				lcd_clear();
+				lcd_printf("Door is opening");
+				lcd_gotoxy(0, 1);
+				lcd_printf("Press * to enter");
+				PORTD.1 = 1;
+				}
+			else if (strcmp(password, storedPassword) == 0 && enteredID == 134)
+				{
+				lcd_clear();
+				lcd_gotoxy(5, 0);
+				lcd_printf("Welcome!");
+				lcd_gotoxy(7, 1);
+				lcd_printf("Salah");
+				delay_ms(1000);
+				lcd_clear();
+				lcd_printf("Door is opening");
+				lcd_gotoxy(0, 1);
+				lcd_printf("Press * to enter");
+				PORTD.1 = 1;
+				}
+			else if (strcmp(password, storedPassword) == 0 && enteredID == 138)
+				{
+				lcd_clear();
+				lcd_gotoxy(5, 0);
+				lcd_printf("Welcome!");
+				lcd_gotoxy(7, 1);
+				lcd_printf("Zaki");
+				delay_ms(1000);
+				lcd_clear();
+				lcd_printf("Door is opening");
+				lcd_gotoxy(0, 1);
+				lcd_printf("Press * to enter");
+				PORTD.1 = 1;
+				}
+			else
+				{
+				lcd_clear();
+				lcd_printf("Wrong password");
+				// alarm
+				PORTD.5 = 1;
+				delay_ms(1000);// Wait for 1 second
+				PORTD.5 = 0;
+				continue;       // Restart the loop to re-enter a valid password
+				}
+			}
+		else
+			{
+			lcd_clear();
+			lcd_printf("Invalid ID");
+			// Alarm
+			PORTD.5 = 1;
+			delay_ms(1000); // Wait for 1 second
+			PORTD.5 = 0;
+			delay_ms(1000);
+			PORTD.5 = 1;
+			delay_ms(1000); // Wait for 1 second
+			PORTD.5 = 0;
+			delay_ms(1000);
+			continue;       // Restart the loop to re-enter a valid ID
+			}
+ 
+		// Optional: You can add a delay or additional logic here
+		while (keypad() != 10);
+ 
+		// Wait for the '*' key to be released
+		lcd_clear();
+		 if( keypad() == 11)
+			PORTD.1 = 0;
+		}
+}
+ 
+char keypad()
+{
+	while (1)
+		{
+		PORTC.0 = 0; // column 1 is activated by 0
+		PORTC.1 = 1; // column 2 is inactive by 1
+		PORTC.2 = 1; // column 3 is inactive by 1
+		switch (PINC)
+			{
+			// 0bxrrrrccc
+			case 0b11110110:
+				while (PINC.3 == 0);
+				return 1;
+				break;
+			case 0b11101110:
+				while (PINC.4 == 0);
+				return 4;
+				break;
+			case 0b11011110:
+				while (PINC.5 == 0);
+				return 7;
+				break;
+			case 0b10111110:
+				while (PINC.6 == 0);
+				return 10; // '*' corresponds to number 10
+				break;
+			}
+		PORTC.0 = 1; // column 1 is inactive by 1
+		PORTC.1 = 0; // column 2 is activated by 0
+		PORTC.2 = 1; // column 3 is inactive by 1
+		switch (PINC)
+			{
+			// 0bxrrrrccc
+			case 0b11110101:
+				while (PINC.3 == 0);
+				return 2;
+				break;
+			case 0b11101101:
+				while (PINC.4 == 0);
+				return 5;
+				break;
+			case 0b11011101:
+				while (PINC.5 == 0);
+				return 8;
+				break;
+			case 0b10111101:
+				while (PINC.6 == 0);
+				return 0;
+				break;
+			}
+		PORTC.0 = 1; // column 1 is inactive by 1
+		PORTC.1 = 1; // column 2 is inactive by 1
+		PORTC.2 = 0; // column 3 is activated by 0
+		switch (PINC)
+			{
+			// 0bxrrrrccc
+			case 0b11110011:
+				while (PINC.3 == 0);
+				return 3;
+				break;
+			case 0b11101011:
+				while (PINC.4 == 0);
+				return 6;
+				break;
+			case 0b11011011:
+				while (PINC.5 == 0);
+				return 9;
+				break;
+			case 0b10111011:
+				while (PINC.6 == 0);
+				return 11;
+				break;
+			}
+		}
+}
+ 
+void EE_Write(unsigned int add, const unsigned char *data, int length)
+{
+	for (j = 0; j < length; ++j)
+		{
+		while (EECR.1 == 1);
+		EEAR = add + j;
+		EEDR = data[j];
+		EECR.2 = 1;
+		EECR.1 = 1;
+		//  lcd_printf("%d , ", EEAR) ;
+		//    delay_ms(1000);
+		}
+}
+ 
+void EE_Read(unsigned int add, unsigned char *data, int length)
+{
+	for (k = 0; k < length; ++k)
+		{
+		while (EECR.1 == 1);
+		EEAR = add + k;
+		EECR.0 = 1;
+		data[k] = EEDR;
+ 
+		}
+}
+ 
+void ChangePasswordUser(unsigned int  enteredID)
+{
+	lcd_printf("Enter Old-PC");
+	lcd_gotoxy(0, 1);
+	for (i = 0; i < sizeof(OldPassword) - 1; ++i)
+		{
+		OldPassword[i] = keypad() + '0';
+		// lcd_data('*');
+		}
+ 
+	OldPassword[sizeof(OldPassword) - 1] = '\0'; // Null-terminate the password
+               lcd_printf("%s", OldPassword); 
+                delay_ms(1000);
+               while(keypad()!=10);
+ 
+	if( strcmp(OldPassword, storedPassword) == 0)
+		{ 
+        lcd_clear();
+		lcd_printf("Enter New-PC"); 
+        lcd_gotoxy(0, 1);
+ 
+		for (i = 0; i < sizeof(NewPassword) - 1; ++i)
+			{
+			NewPassword[i] = keypad() + '0';
+			// lcd_data('*');
+			}
+ 
+		NewPassword[sizeof(NewPassword) - 1] = '\0';  
+ 
+            lcd_printf("%s", NewPassword);   
+          while(keypad()!=10);
+          lcd_clear();
+	     lcd_printf("Re-enter PC"); 
+        lcd_gotoxy(0, 1);
+ 
+		for (i = 0; i < sizeof(ReenterNewPassword) - 1; ++i)
+			{
+			ReenterNewPassword[i] = keypad() + '0';
+			// lcd_data('*');
+			}
+ 
+		ReenterNewPassword[sizeof(ReenterNewPassword) - 1] = '\0';    
+               //                                 
+               lcd_printf("%s", ReenterNewPassword);   
+                   while(keypad()!=10);
+           if( strcmp(ReenterNewPassword, NewPassword) == 0) {  
+                      lcd_clear();
+           EE_Write(enteredID, NewPassword, sizeof(NewPassword) - 1);
+                   lcd_printf("Change"); 
+                   lcd_gotoxy(0,1)  ;
+                   lcd_printf("Successfully");
+                      delay_ms(1000);
+ 
+                    lcd_clear();
+           } else{
+              PORTD.5 = 1;
+              delay_ms(1000);
+              PORTD.5 = 0;
+              delay_ms(1000);
+           }
+ 
+		} 
+        else{
+              PORTD.5 = 1;
+              delay_ms(1000);
+              PORTD.5 = 0;
+              delay_ms(1000);   
+              lcd_clear();
+           //   delay_ms(1000); 
+              ChangePasswordUser( enteredID);
+        }
+ 
+ 
+}
+void ChangePasswordAdmin()
+{
+     lcd_clear();
+	lcd_printf("You are Admin");
+    while(keypad()!=10); 
+    lcd_clear();
+    lcd_printf("Enter PC: ");
+	lcd_gotoxy(0, 1);
+ 
+ 
+       for (i = 0; i < sizeof(ChangeAdminPasswords) - 1; ++i)
+        {
+        ChangeAdminPasswords[i] = keypad() + '0';
+        // lcd_data('*');
+        }
+ 
+    ChangeAdminPasswords[sizeof(ChangeAdminPasswords) - 1] = '\0';   
+              lcd_printf("%s",ChangeAdminPasswords);
+              while(keypad()!=10);
+       	if( strcmp(ChangeAdminPasswords,Temp ) == 0){    
+                lcd_clear();
+ 
+        lcd_printf("Entered ID:");
+        lcd_gotoxy(0, 1);
+		id1 = keypad();
+		id2 = keypad();
+		id3 = keypad();
+		enteredID = id3 + (id2 * 10) + (id1 * 100);
+ 
+	     lcd_printf("%u",enteredID);
+		while (keypad() != 10);   
+		lcd_clear(); 
+ 
+         lcd_printf("Enter-new PC: ");  
+           lcd_gotoxy(0, 1);
+       for (i = 0; i < sizeof(ChangeAdminPasswordsForUsers) - 1; ++i)
+        {
+        ChangeAdminPasswordsForUsers[i] = keypad() + '0';
+        // lcd_data('*');
+        }
+ 
+        ChangeAdminPasswordsForUsers[sizeof(ChangeAdminPasswordsForUsers) - 1] = '\0';
+ 
+         lcd_printf("%s", ChangeAdminPasswordsForUsers); 
+ 
+          while (keypad() != 10);    
+ 
+            EE_Write(enteredID, ChangeAdminPasswordsForUsers, sizeof(ChangeAdminPasswordsForUsers) - 1); 
+             lcd_clear();   
+              lcd_printf("Change"); 
+                   lcd_gotoxy(0,1)  ;
+                   lcd_printf("Successfully");
+                      delay_ms(1000);
+                    lcd_clear();
+        }
+ 
+         else{
+              PORTD.5 = 1;
+              delay_ms(1000);
+              PORTD.5 = 0;
+              delay_ms(1000);   
+              lcd_clear();
+             delay_ms(1000); 
+             ChangePasswordAdmin();
+ 
+ 
+        } 
+ 
+ 
+ 
+}
+// Admin  High priority
+interrupt [2] void ext0(void)
+{
+	ChangePasswordAdmin();
+ 
+}
+// Set PC
+interrupt [3] void  ext1(void)
+{
+	 ChangePasswordUser( enteredID);
+}
